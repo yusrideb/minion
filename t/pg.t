@@ -460,6 +460,33 @@ is $job->info->{state}, 'failed', 'right state';
 is $job->info->{result}, 'Non-zero exit status (1)', 'right result';
 $worker->unregister;
 
+# Auto retry
+is $minion->retry_delay->(0),  15,     'right result';
+is $minion->retry_delay->(1),  17,     'right result';
+is $minion->retry_delay->(2),  33,     'right result';
+is $minion->retry_delay->(3),  99,     'right result';
+is $minion->retry_delay->(4),  275,    'right result';
+is $minion->retry_delay->(5),  645,    'right result';
+is $minion->retry_delay->(25), 390665, 'right result';
+$id = $minion->enqueue(exit => [] => {attempts => 2});
+$job = $worker->register->dequeue(0);
+is $job->id, $id, 'right id';
+is $job->retries,  0, 'job has not been retried';
+is $job->attempts, 2, 'job will be attempted twice';
+$job->perform;
+is $job->info->{state}, 'inactive', 'right state';
+ok $job->info->{retried} < $job->info->{delayed}, 'delayed timestamp';
+$minion->backend->pg->db->query(
+  'update minion_jobs set delayed = now() where id = ?', $id);
+$job = $worker->register->dequeue(0);
+is $job->id, $id, 'right id';
+is $job->retries,  1, 'job has been retried once';
+is $job->attempts, 2, 'job will be attempted twice';
+$job->perform;
+is $job->info->{state}, 'failed', 'right state';
+is $job->info->{result}, 'Non-zero exit status (1)', 'right result';
+$worker->unregister;
+
 # A job needs to be dequeued again after a retry
 $minion->add_task(restart => sub { });
 $id  = $minion->enqueue('restart');

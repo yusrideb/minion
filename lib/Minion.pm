@@ -13,6 +13,7 @@ has app => sub { Mojo::Server->new->build_app('Mojo::HelloWorld') };
 has 'backend';
 has missing_after => 86400;
 has remove_after  => 864000;
+has retry_delay   => sub { \&_retry };
 has tasks         => sub { {} };
 
 our $VERSION = '3.0';
@@ -26,11 +27,12 @@ sub job {
 
   return undef unless my $job = $self->backend->job_info($id);
   return Minion::Job->new(
-    args    => $job->{args},
-    id      => $job->{id},
-    minion  => $self,
-    retries => $job->{retries},
-    task    => $job->{task}
+    args     => $job->{args},
+    attempts => $job->{attempts},
+    id       => $job->{id},
+    minion   => $self,
+    retries  => $job->{retries},
+    task     => $job->{task}
   );
 }
 
@@ -71,6 +73,8 @@ sub _delegate {
   $self->backend->$method;
   return $self;
 }
+
+sub _retry { ($_[0]**4) + 15 + $_[0] }
 
 1;
 
@@ -241,6 +245,19 @@ Amount of time in seconds after which jobs that have reached the state
 C<finished> will be removed automatically by L</"repair">, defaults to
 C<864000> (10 days).
 
+=head2 retry_delay
+
+  my $cb  = $minion->retry_delay;
+  $minion = $minion->retry_delay(sub {...});
+
+A callback used to calculate the delay for automatically retried jobs, defaults
+to C<(retries ** 4) + 15 + retries> (15, 17, 33, 99, 275, 645...).
+
+  $minion->retry_delay(sub {
+    my $retries = shift;
+    return ($retries ** 4) + 15;
+  });
+
 =head2 tasks
 
   my $tasks = $minion->tasks;
@@ -281,6 +298,12 @@ are fine though.
 These options are currently available:
 
 =over 2
+
+=item attempts
+
+  attempts => 25
+
+Number of times job will be retried automatically.
 
 =item delay
 

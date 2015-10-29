@@ -109,6 +109,12 @@ These fields are currently available:
 
 Job arguments.
 
+=item attempts
+
+  attempts => 25
+
+Number of times job will be retried automatically.
+
 =item id
 
   id => '10023'
@@ -140,6 +146,12 @@ Enqueue a new job with C<inactive> state. Meant to be overloaded in a subclass.
 These options are currently available:
 
 =over 2
+
+=item attempts
+
+  attempts => 25
+
+Number of times job will be retried automatically.
 
 =item delay
 
@@ -203,6 +215,12 @@ These fields are currently available:
   args => ['foo', 'bar']
 
 Job arguments.
+
+=item attempts
+
+  attempts => 25
+
+Number of times job will be retried automatically.
 
 =item created
 

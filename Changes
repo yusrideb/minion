@@ -1,7 +1,12 @@
 
-3.0  2015-10-29
+3.0  2015-10-30
   - Removed Minion::Backend::File, because DBM::Deep quickly becomes unusably
     slow, we recommend the use of Minion::Backend::SQLite instead.
+  - Added support for automatically retried jobs.
+  - Added attempts attribute to Minion::Job.
+  - Added retry_delay attribute to Minion.
+  - Added attempts option to enqueue method in Minion and Minion::Backend::Pg.
+  - Added -A option to job command.
 
 2.05  2015-10-15
   - Fixed bug where jobs could sometimes not be finished correctly by the worker
