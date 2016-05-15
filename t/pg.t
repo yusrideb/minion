@@ -604,6 +604,11 @@ ok !$job2, 'child job not dequeued';
 $job->finish;
 $job2 = $worker->dequeue(0);
 ok $job2, 'got the child job';
+
+$id = $minion->enqueue(test => undef, {parents => [-1]});
+$job  = $worker->dequeue(0);
+ok !$job, 'job with non-existing parents not dequeued';
+$minion->job($id)->fail;
 $worker->unregister;
 
 # Clean up once we are done

@@ -191,9 +191,9 @@ sub _try {
        select id from minion_jobs j
        where delayed <= now() and queue = any (?) and state = 'inactive'
          and task = any (?)
-         and (array_length(parents, 1) is null or not exists (
-           select 1 from minion_jobs p
-           where p.id = any(j.parents) and p.state != 'finished'
+         and (cardinality(parents) = 0 or cardinality(parents) = (
+           select count(*) from minion_jobs p
+           where p.id = any(j.parents) and p.state = 'finished'
          ))
        order by priority desc, created
        limit 1
