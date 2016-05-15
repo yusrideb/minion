@@ -24,10 +24,10 @@ my $worker = $minion->repair->worker;
 isa_ok $worker->minion->app, 'Mojolicious', 'has default application';
 
 # Migrate up and down
-is $minion->backend->pg->migrations->active, 9, 'active version is 9';
+is $minion->backend->pg->migrations->active, 10, 'active version is 10';
 is $minion->backend->pg->migrations->migrate(0)->active, 0,
   'active version is 0';
-is $minion->backend->pg->migrations->migrate->active, 9, 'active version is 9';
+is $minion->backend->pg->migrations->migrate->active, 10, 'active version is 10';
 
 # Register and unregister
 $worker->register;
@@ -591,6 +591,19 @@ is $minion->job($id3)->info->{result}, undef,      'no result';
 is $minion->job($id4)->info->{state},  'failed',   'right state';
 is $minion->job($id4)->info->{result}, 'Non-zero exit status (1)',
   'right result';
+$worker->unregister;
+
+# Job parents
+$worker = $minion->worker->register;
+$id   = $minion->enqueue(test => undef);
+$id2  = $minion->enqueue(test => undef, {parents => [$id]});
+$job  = $worker->dequeue(0);
+$job2 = $worker->dequeue(0);
+ok $job, 'got the parent job';
+ok !$job2, 'child job not dequeued';
+$job->finish;
+$job2 = $worker->dequeue(0);
+ok $job2, 'got the child job';
 $worker->unregister;
 
 # Clean up once we are done

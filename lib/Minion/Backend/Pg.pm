@@ -29,11 +29,12 @@ sub enqueue {
 
   my $db = $self->pg->db;
   return $db->query(
-    "insert into minion_jobs (args, attempts, delayed, priority, queue, task)
-     values (?, ?, (now() + (interval '1 second' * ?)), ?, ?, ?)
+    "insert into minion_jobs
+       (args, attempts, delayed, priority, queue, task, parents)
+     values (?, ?, (now() + (interval '1 second' * ?)), ?, ?, ?, ?)
      returning id", {json => $args}, $options->{attempts} // 1,
     $options->{delay} // 0, $options->{priority} // 0,
-    $options->{queue} // 'default', $task
+    $options->{queue} // 'default', $task, $options->{parents} || []
   )->hash->{id};
 }
 
@@ -187,9 +188,13 @@ sub _try {
     "update minion_jobs
      set started = now(), state = 'active', worker = ?
      where id = (
-       select id from minion_jobs
+       select id from minion_jobs j
        where delayed <= now() and queue = any (?) and state = 'inactive'
          and task = any (?)
+         and (array_length(parents, 1) is null or not exists (
+           select 1 from minion_jobs p
+           where p.id = any(j.parents) and p.state != 'finished'
+         ))
        order by priority desc, created
        limit 1
        for update skip locked
@@ -759,3 +764,6 @@ create trigger minion_jobs_notify_workers_trigger
 -- 9 down
 drop trigger if exists minion_jobs_notify_workers_trigger on minion_jobs;
 drop function if exists minion_jobs_notify_workers();
+
+-- 10 up
+alter table minion_jobs add column parents bigint[] default '{}'::bigint[];
