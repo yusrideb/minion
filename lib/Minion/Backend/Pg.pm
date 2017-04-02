@@ -82,6 +82,12 @@ sub list_workers {
     ->arrays->map(sub { $self->worker_info($_->[0]) })->to_array;
 }
 
+sub lock {
+  my ($self, $name, $duration, $options) = (shift, shift, shift, shift // {});
+  return !!$self->pg->db->query('select * from minion_lock(?, ?, ?)',
+    $name, $duration, $options->{limit} || 1)->array->[0];
+}
+
 sub new {
   my $self = shift->SUPER::new(pg => Mojo::Pg->new(@_));
 
@@ -200,6 +206,10 @@ sub stats {
   $stats->{"${_}_jobs"} ||= 0 for qw(inactive active failed finished);
 
   return $stats;
+}
+
+sub unlock {
+  !!shift->pg->db->query('select * from minion_unlock(?)', shift)->array->[0];
 }
 
 sub unregister_worker {
@@ -568,6 +578,8 @@ List only jobs for this task.
 
 Returns the same information as L</"worker_info"> but in batches.
 
+=head2 lock
+
 =head2 new
 
   my $backend = Minion::Backend::Pg->new('postgresql://postgres@/test');
@@ -699,6 +711,8 @@ Number of jobs in C<inactive> state.
 Number of workers that are currently not processing a job.
 
 =back
+
+=head2 unlock
 
 =head2 unregister_worker
 
@@ -851,5 +865,52 @@ alter table minion_workers add column inbox jsonb
 -- 13 up
 create index on minion_jobs using gin (parents);
 
--- 14 up
-drop index minion_jobs_parents_idx;
+-- 15 up
+create table if not exists minion_locks (
+  name    text primary key,
+  holders int not null,
+  expires timestamp with time zone not null
+);
+create function minion_lock(text, int, int) returns bool as $$
+declare
+  new_expires timestamp with time zone = now() + (interval '1 second' * $2);
+  lock record;
+begin
+  delete from minion_locks where expires < now();
+  select * into lock from minion_locks where name = $1;
+  if found then
+    if lock.holders >= $3 then
+      return false;
+    else
+      update minion_locks set holders = holders + 1,
+        expires = greatest(expires, new_expires) where name = $1;
+      return true;
+    end if;
+  else
+    insert into minion_locks values ($1, 1, new_expires);
+    return true;
+  end if;
+end;
+$$ language plpgsql;
+create function minion_unlock(text) returns bool as $$
+declare
+  lock record;
+begin
+  select * into lock from minion_locks where name = $1;
+  if found then
+    if lock.holders > 1 then
+      update minion_locks set holders = holders - 1 where name = $1;
+    else
+      delete from minion_locks where name = $1;
+    end if;
+    return true;
+  else
+    return false;
+  end if;
+end;
+$$ language plpgsql;
+
+-- 15 down
+drop function if exists minion_lock(text, int, int);
+drop function if exists minion_unlock(text);
+drop table if exists minion_locks;
