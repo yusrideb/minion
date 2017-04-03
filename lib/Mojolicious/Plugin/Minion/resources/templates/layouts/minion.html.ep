@@ -1,0 +1,14 @@
+<!doctype html><html>
+  <head>
+    %= javascript '/mojo/jquery/jquery.js'
+    %= stylesheet '/minion/app.css'
+  </head>
+  <body>
+    <div>
+      %= link_to Minion => 'minion_dashboard'
+      %= link_to Workers => 'minion_workers'
+      %= link_to Jobs => 'minion_jobs'
+    </div>
+    %= content
+  </body>
+</html>

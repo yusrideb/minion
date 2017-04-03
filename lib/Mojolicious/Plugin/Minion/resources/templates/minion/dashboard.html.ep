@@ -1,0 +1,15 @@
+% layout 'minion';
+
+<script>
+  function pollStats() {
+    $.get('<%= url_for 'minion_stats' %>', function(data) {
+      $('#stats').html(JSON.stringify(data));
+      setTimeout(pollStats, 5000);
+    });
+  }
+  $(window).on('load', function () { pollStats() });
+</script>
+
+Dashboard with stats updated every few seconds.
+
+<div id="stats">Loading...</div>
