@@ -37,7 +37,8 @@ sub _job {
 
 sub _jobs {
   my $c = shift;
-  $c->render('minion/jobs');
+  my $jobs = $c->minion->backend->list_jobs(0, 100);
+  $c->render('minion/jobs', jobs => $jobs);
 }
 
 sub _stats {
@@ -52,7 +53,8 @@ sub _worker {
 
 sub _workers {
   my $c = shift;
-  $c->render('minion/workers');
+  my $workers = $c->minion->backend->list_workers(0, 100);
+  $c->render('minion/workers', workers => $workers);
 }
 
 1;

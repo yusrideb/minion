@@ -1,3 +1,20 @@
 % layout 'minion';
 
-Paging list of workers here.
+<table class="table table-bordered table-striped">
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Host</th>
+      <th>Process ID</th>
+    </tr>
+  </thead>
+  <tbody>
+    % for my $worker (@$workers) {
+      <tr>
+        <td><%= $worker->{id} %></td>
+        <td><%= $worker->{host} %></td>
+        <td><%= $worker->{pid} %></td>
+      </tr>
+    % }
+  </tbody>
+</table>

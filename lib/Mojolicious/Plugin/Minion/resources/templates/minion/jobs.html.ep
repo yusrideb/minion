@@ -1,3 +1,22 @@
 % layout 'minion';
 
-Paging list of jobs here.
+<table class="table table-bordered table-striped">
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>State</th>
+      <th>Queue</th>
+      <th>Task</th>
+    </tr>
+  </thead>
+  <tbody>
+    % for my $job (@$jobs) {
+      <tr>
+        <td><%= $job->{id} %></td>
+        <td><%= $job->{state} %></td>
+        <td><%= $job->{queue} %></td>
+        <td><%= $job->{task} %></td>
+      </tr>
+    % }
+  </tbody>
+</table>

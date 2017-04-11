@@ -3,13 +3,64 @@
 <script>
   function pollStats() {
     $.get('<%= url_for 'minion_stats' %>', function(data) {
-      $('#stats').html(JSON.stringify(data));
+      $('#stats-inactive-workers').html(data.inactive_workers);
+      $('#stats-active-workers').html(data.active_workers);
+      $('#stats-inactive-jobs').html(data.inactive_jobs);
+      $('#stats-active-jobs').html(data.active_jobs);
+      $('#stats-finished-jobs').html(data.finished_jobs);
+      $('#stats-failed-jobs').html(data.failed_jobs);
       setTimeout(pollStats, 5000);
     });
   }
   $(window).on('load', function () { pollStats() });
 </script>
 
-Dashboard with stats updated every few seconds.
+<div class="row">
+  <div class="col-md-12">
+    <div class="row">
 
-<div id="stats">Loading...</div>
+      <div class="col-md-2">
+        <div class="stats">
+          <div id="stats-inactive-workers" class="stats-body">0</div>
+          <div class="stats-description">Inactive Workers</div>
+        </div>
+      </div>
+
+      <div class="col-md-2">
+        <div class="stats">
+          <div id="stats-active-workers" class="stats-body">0</div>
+          <div class="stats-description">Active Workers</div>
+        </div>
+      </div>
+
+      <div class="col-md-2">
+        <div class="stats">
+          <div id="stats-inactive-jobs" class="stats-body">0</div>
+          <div class="stats-description">Inactive Jobs</div>
+        </div>
+      </div>
+
+      <div class="col-md-2">
+        <div class="stats">
+          <div id="stats-active-jobs" class="stats-body">0</div>
+          <div class="stats-description">Active Jobs</div>
+        </div>
+      </div>
+
+      <div class="col-md-2">
+        <div class="stats">
+          <div id="stats-finished-jobs" class="stats-body">0</div>
+          <div class="stats-description">Finished Jobs</div>
+        </div>
+      </div>
+
+      <div class="col-md-2">
+        <div class="stats">
+          <div id="stats-failed-jobs" class="stats-body">0</div>
+          <div class="stats-description">Failed Jobs</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
