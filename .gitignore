@@ -1,6 +1,5 @@
 .*
 *~
-_*
 !.gitignore
 !.perltidyrc
 !.travis.yml
